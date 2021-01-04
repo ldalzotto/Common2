@@ -56,14 +56,31 @@ inline void vector_free(Vector<ElementType>* p_vector)
 	*p_vector = vector_build<ElementType>(NULL, 0);
 };
 
+template<class ElementType>
+inline char vector_empty(Vector<ElementType>* p_vector)
+{
+	return p_vector->Size == 0;
+};
+
 
 template<class ElementType>
 inline ElementType* vector_get(Vector<ElementType>* p_vector, const size_t p_index)
 {
 #if CONTAINER_BOUND_TEST
 	_vector_bound_check(p_vector, p_index);
+	_vector_bound_head_check(p_vector, p_index);
 #endif
 	return &p_vector->Span.Memory[p_index];
+};
+
+template<class ElementType>
+inline ElementType vector_get_vr(Vector<ElementType>* p_vector, const size_t p_index)
+{
+#if CONTAINER_BOUND_TEST
+	_vector_bound_check(p_vector, p_index);
+	_vector_bound_head_check(p_vector, p_index);
+#endif
+	return p_vector->Span.Memory[p_index];
 };
 
 

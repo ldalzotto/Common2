@@ -3,11 +3,6 @@
 
 #include <stdio.h>
 
-//TODO
-/*
-	cast with macro
-*/
-
 inline void assert_true(bool p_condition)
 {
 	if (!p_condition) { abort(); }
@@ -31,7 +26,7 @@ inline void span_test()
 		assert_true(l_span_sizet.Capacity == l_new_capacity);
 		assert_true(l_span_sizet.Memory != NULL);
 	}
-	
+
 	//When freeing the span, it's structure is resetted
 	{
 		span_free(&l_span_sizet);
@@ -120,7 +115,7 @@ inline void vector_test()
 	// vector_erase_array_at
 	{
 		size_t l_old_size = l_vector_sizet.Size;
-		size_t l_erase_begin_index = 3; 
+		size_t l_erase_begin_index = 3;
 		const size_t l_erase_nb = 6;
 		const size_t l_old_element_check_nb = 3;
 
@@ -161,21 +156,47 @@ inline void vector_test()
 	}
 };
 
-inline void sandbox_test()
+inline void pool_test()
 {
-	Vector<size_t> l_t = vector_allocate<size_t>(10);
+	Pool<size_t> l_pool_sizet = pool_allocate<size_t>(10);
 
-	for (vector_loop(&l_t, i))
 	{
-	
+		assert_true(pool_get_memory(&l_pool_sizet) != NULL);
+		assert_true(pool_get_capacity(&l_pool_sizet) == 10);
+		assert_true(pool_get_size(&l_pool_sizet) == 0);
 	}
 
-	vector_free(&l_t);
+	// pool_alloc_element - allocate new element
+	{
+		assert_true(pool_get_free_size(&l_pool_sizet) == 0);
+
+		size_t l_element = 3;
+		Token(size_t) l_token = pool_alloc_element(&l_pool_sizet, &l_element);
+
+		assert_true(l_token.tok == 0);
+		assert_true(pool_get_size(&l_pool_sizet) == 1);
+	}
+
+	// pool_alloc_element - release elements
+	{
+		pool_release_element_1v(&l_pool_sizet, Token(size_t){0});
+
+		// memory is not deallocated
+		assert_true(pool_get_size(&l_pool_sizet) == 1);
+	}
+
+	pool_free(&l_pool_sizet);
+};
+
+inline void sandbox_test()
+{
+
 }
 
 int main()
 {
 	span_test();
 	vector_test();
+	pool_test();
 	sandbox_test();
 }

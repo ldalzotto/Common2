@@ -56,3 +56,24 @@ inline void span_bound_inside_check(const Span<ElementType>* p_span, const Slice
     }
 #endif
 };
+
+template<class ElementType>
+inline void _span_bound_check(const Span<ElementType>* p_span, const size_t p_index)
+{
+#if CONTAINER_BOUND_TEST
+    if (p_index > p_span->Capacity)
+    {
+        abort();
+    }
+#endif
+};
+
+template<class ElementType>
+inline ElementType* span_get(const Span<ElementType>* p_span, const size_t p_index)
+{
+#if CONTAINER_BOUND_TEST
+    _span_bound_check(p_span, p_index);
+#endif
+
+    return p_span->Memory[p_index];
+};
