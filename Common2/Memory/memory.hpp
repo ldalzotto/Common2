@@ -1,5 +1,11 @@
 #pragma once
 
+inline char* heap_malloc(const size_t p_size)
+{
+	return (char*)::malloc(p_size);
+};
+
+
 inline char* heap_realloc(char* p_memory, const size_t p_new_size)
 {
 	return (char*)::realloc(p_memory, p_new_size);
