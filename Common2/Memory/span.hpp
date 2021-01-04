@@ -68,12 +68,41 @@ inline void _span_bound_check(const Span<ElementType>* p_span, const size_t p_in
 #endif
 };
 
+
+
 template<class ElementType>
-inline ElementType* span_get(const Span<ElementType>* p_span, const size_t p_index)
+inline void span_move_memory_down(Span<ElementType>* p_span, const size_t p_moved_block_size, const size_t p_break_index, const size_t p_move_delta)
 {
+    Slice<ElementType> l_target = slice_build_memory_offset_elementnb(p_span->Memory, p_break_index + p_move_delta, p_moved_block_size - p_break_index);
 #if CONTAINER_BOUND_TEST
-    _span_bound_check(p_span, p_index);
+    span_bound_inside_check(p_span, &l_target);
+#endif		
+    Slice<ElementType> l_source = slice_build(p_span->Memory, p_break_index, p_moved_block_size);
+    slice_memmove(&l_target, &l_source);
+};
+
+template<class ElementType>
+inline void span_move_memory_up(Span<ElementType>* p_span, const size_t p_moved_block_size, const size_t p_break_index, const size_t p_move_delta)
+{
+    Slice<ElementType> l_target = slice_build_memory_offset_elementnb(p_span->Memory, p_break_index, p_moved_block_size - p_break_index);
+#if CONTAINER_BOUND_TEST
+    span_bound_inside_check(p_span, &l_target);
+#endif		
+    Slice<ElementType> l_source = slice_build(p_span->Memory, p_break_index + p_move_delta, p_moved_block_size);
+    slice_memmove(&l_target, &l_source);
+};
+
+template<class ElementType>
+inline void span_copy_memory(Span<ElementType>* p_span, const size_t p_copy_index, const Slice<ElementType>* p_elements)
+{
+    Slice<ElementType> l_target = slice_build_memory_elementnb(p_span->Memory + p_copy_index, p_elements->Size);
+
+#if CONTAINER_BOUND_TEST
+    span_bound_inside_check(p_span, &l_target);
 #endif
 
-    return p_span->Memory[p_index];
+    slice_memcpy(
+        &l_target,
+        p_elements
+    );
 };

@@ -174,18 +174,45 @@ inline void pool_test()
 		Token(size_t) l_token = pool_alloc_element(&l_pool_sizet, &l_element);
 
 		assert_true(l_token.tok == 0);
-		assert_true(pool_get_size(&l_pool_sizet) == 1);
+		assert_true(*pool_get(&l_pool_sizet, &l_token) == l_element);
 	}
 
-	// pool_alloc_element - release elements
+	// pool_release_element - release elements
 	{
-		pool_release_element_1v(&l_pool_sizet, Token(size_t){0});
+		Token(size_t) l_token = Token(size_t) { 0 };
+		pool_release_element(&l_pool_sizet, &l_token);
 
 		// memory is not deallocated
 		assert_true(pool_get_size(&l_pool_sizet) == 1);
 	}
 
-	pool_free(&l_pool_sizet);
+	// pool_alloc_element - allocating an element while there is free slots
+	{
+		size_t l_element = 4;
+		Token(size_t) l_token = pool_alloc_element(&l_pool_sizet, &l_element);
+
+		pool_alloc_element_1v(&l_pool_sizet, cast(size_t, 10));
+		pool_release_element_1v(
+			&l_pool_sizet,
+			pool_alloc_element_1v(&l_pool_sizet, cast(size_t, 10))
+		);
+		pool_alloc_element_1v(&l_pool_sizet, cast(size_t, 10));
+
+		assert_true(l_token.tok == 0);
+		assert_true(*pool_get(&l_pool_sizet, &l_token) == l_element);
+	}
+
+	for (pool_loop(&l_pool_sizet, i))
+	{
+		size_t l_element = pool_get_rv1v(&l_pool_sizet, Token(size_t) { i });
+	}
+
+	{
+		pool_free(&l_pool_sizet);
+		assert_true(pool_get_size(&l_pool_sizet) == 0);
+		assert_true(pool_get_capacity(&l_pool_sizet) == 0);
+		assert_true(pool_get_memory(&l_pool_sizet) == 0);
+	}
 };
 
 inline void sandbox_test()

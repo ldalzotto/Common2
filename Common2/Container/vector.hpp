@@ -2,6 +2,8 @@
 
 /*
 	A Vector is a Span with an imaginary boundary (Size).
+	Vector memory is continuous, there is no "hole" between items.
+	Vector is reallocated on need.
 	Any memory access outside of this imaginary boundary will be in error.
 	The Vector expose some safe way to insert/erase data (array or single element).
 */
@@ -74,7 +76,7 @@ inline ElementType* vector_get(Vector<ElementType>* p_vector, const size_t p_ind
 };
 
 template<class ElementType>
-inline ElementType vector_get_vr(Vector<ElementType>* p_vector, const size_t p_index)
+inline ElementType vector_get_rv(Vector<ElementType>* p_vector, const size_t p_index)
 {
 #if CONTAINER_BOUND_TEST
 	_vector_bound_check(p_vector, p_index);
@@ -87,39 +89,13 @@ inline ElementType vector_get_vr(Vector<ElementType>* p_vector, const size_t p_i
 template<class ElementType>
 inline void _vector_move_memory_down(Vector<ElementType>* p_vector, const size_t p_break_index, const size_t p_move_delta)
 {
-	Slice<ElementType> l_target = slice_build_memory_offset_elementnb(p_vector->Span.Memory, p_break_index + p_move_delta, p_vector->Size - p_break_index);
-#if CONTAINER_BOUND_TEST
-	span_bound_inside_check(&p_vector->Span, &l_target);
-#endif		
-	Slice<ElementType> l_source = slice_build(p_vector->Span.Memory, p_break_index, p_vector->Size);
-	slice_memmove(&l_target, &l_source);
+	span_move_memory_down(&p_vector->Span, p_vector->Size, p_break_index, p_move_delta);
 };
 
 template<class ElementType>
 inline void _vector_move_memory_up(Vector<ElementType>* p_vector, const size_t p_break_index, const size_t p_move_delta)
 {
-	Slice<ElementType> l_target = slice_build_memory_offset_elementnb(p_vector->Span.Memory, p_break_index, p_vector->Size - p_break_index);
-#if CONTAINER_BOUND_TEST
-	span_bound_inside_check(&p_vector->Span, &l_target);
-#endif		
-	Slice<ElementType> l_source = slice_build(p_vector->Span.Memory, p_break_index + p_move_delta, p_vector->Size);
-	slice_memmove(&l_target, &l_source);
-};
-
-
-template<class ElementType>
-inline void _vector_copy_memory(Vector<ElementType>* p_vector, const size_t p_copy_index, const Slice<ElementType>* p_elements)
-{
-	Slice<ElementType> l_target = slice_build_memory_elementnb(p_vector->Span.Memory + p_copy_index, p_elements->Size);
-
-#if CONTAINER_BOUND_TEST
-	span_bound_inside_check(&p_vector->Span, &l_target);
-#endif
-
-	slice_memcpy(
-		&l_target,
-		p_elements
-	);
+	span_move_memory_up(&p_vector->Span, p_vector->Size, p_break_index, p_move_delta);
 };
 
 template<class ElementType>
@@ -138,7 +114,7 @@ inline char vector_insert_array_at(Vector<ElementType>* p_vector, const Slice<El
 	else
 	{
 		_vector_move_memory_down(p_vector, p_index, p_elements->Size);
-		_vector_copy_memory(p_vector, p_index, p_elements);
+		span_copy_memory(&p_vector->Span, p_index, p_elements);
 
 		p_vector->Size += p_elements->Size;
 	}
@@ -192,7 +168,7 @@ inline char vector_push_back_array(Vector<ElementType>* p_vector, const Slice<El
 	}
 	else
 	{
-		_vector_copy_memory(p_vector, p_vector->Size, p_elements);
+		span_copy_memory(&p_vector->Span, p_vector->Size, p_elements);
 		p_vector->Size += p_elements->Size;
 	}
 
