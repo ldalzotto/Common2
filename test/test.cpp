@@ -3,11 +3,6 @@
 
 #include <stdio.h>
 
-inline void assert_true(bool p_condition)
-{
-	if (!p_condition) { abort(); }
-};
-
 template<class ElementType>
 inline void assert_span_unitialized(Span<ElementType>* p_span)
 {
@@ -215,8 +210,108 @@ inline void pool_test()
 	}
 };
 
+inline void varyingvector_test()
+{
+	VaryingVector l_varyingvector = varyingvector_allocate_default();
+
+	// varyingvector_push_back
+	{
+		assert_true(l_varyingvector.memory.Size == 0);
+
+		Slice<char> l_slice = slice_build_memory_elementnb(cast(char*, &l_varyingvector), 10);
+		varyingvector_push_back(&l_varyingvector, &l_slice);
+
+		assert_true(varyingvector_get_size(&l_varyingvector) == 1);
+		Slice<char> l_element_0 = varyingvector_get(&l_varyingvector, 0);
+		assert_true(l_element_0.Size == 10);
+		assert_true(slice_memcompare_element(&l_slice, &l_element_0));
+	}
+
+	// varyingvector_push_back_element
+	{
+		size_t l_element = 20;
+		varyingvector_push_back_element(&l_varyingvector, &l_element);
+
+		size_t l_inserted_index = varyingvector_get_size(&l_varyingvector) - 1;
+		Slice<char> l_element_inserted = varyingvector_get(&l_varyingvector, l_inserted_index);
+
+		assert_true(l_element_inserted.Size == sizeof(size_t));
+		assert_true(memory_compare(cast(const char*, &l_element), l_element_inserted.Begin, l_element_inserted.Size));
+
+		Slice<size_t> l_casted_slice = slice_cast<size_t>(&l_element_inserted);
+		assert_true(l_casted_slice.Size == 1);
+
+	}
+
+	// varyingvector_pop_back
+	{
+
+		size_t l_old_size = varyingvector_get_size(&l_varyingvector);
+		varyingvector_pop_back(&l_varyingvector);
+		assert_true(varyingvector_get_size(&l_varyingvector) == (l_old_size - 1));
+	}
+
+	varyingvector_free(&l_varyingvector);
+	l_varyingvector = varyingvector_allocate_default();
+
+	// varyingvector_erase_element_at
+	{
+		for (loop(i, 0, 5))
+		{
+			varyingvector_push_back_element_1v(&l_varyingvector, cast(size_t, i));
+		}
+
+		assert_true(varyingvector_get_size(&l_varyingvector) == 5);
+		varyingvector_erase_element_at(&l_varyingvector, 2);
+		assert_true(varyingvector_get_size(&l_varyingvector) == 4);
+		
+		assert_true(*varyingvector_get_typed<size_t>(&l_varyingvector, 2).Begin == 3);
+		assert_true(*varyingvector_get_typed<size_t>(&l_varyingvector, 3).Begin == 4);
+	}
+
+	varyingvector_free(&l_varyingvector);
+	l_varyingvector = varyingvector_allocate_default();
+
+	// varyingvector_erase_array_at
+	{
+		for (loop(i, 0, 5))
+		{
+			varyingvector_push_back_element_1v(&l_varyingvector, cast(size_t, i));
+		}
+
+		assert_true(varyingvector_get_size(&l_varyingvector) == 5);
+		varyingvector_erase_array_at(&l_varyingvector, 2, 2);
+		assert_true(varyingvector_get_size(&l_varyingvector) == 3);
+
+		assert_true(*varyingvector_get_typed<size_t>(&l_varyingvector, 2).Begin == 4);
+	}
+
+	{
+		varyingvector_free(&l_varyingvector);
+
+	}
+};
+
 inline void sandbox_test()
 {
+	Vector<size_t> l_vector_sizet = vector_build((size_t*)NULL, 0);
+
+	// vector_push_back_array
+	{
+		size_t l_old_size = l_vector_sizet.Size;
+		size_t l_elements[5] = { 0,1,2,3,4 };
+		Slice<size_t> l_elements_slice = slice_build_memory_elementnb(l_elements, 5);
+
+		vector_push_back_array(&l_vector_sizet, &l_elements_slice);
+		assert_true(l_vector_sizet.Size == l_old_size + 5);
+		for (loop(i, l_old_size, l_vector_sizet.Size))
+		{
+			assert_true(*vector_get(&l_vector_sizet, i) == l_elements[i - l_old_size]);
+		}
+
+		vector_insert_array_at(&l_vector_sizet, &l_elements_slice, l_vector_sizet.Size);
+	}
+
 
 }
 
@@ -225,5 +320,6 @@ int main()
 	span_test();
 	vector_test();
 	pool_test();
+	varyingvector_test();
 	sandbox_test();
 }

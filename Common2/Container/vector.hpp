@@ -51,11 +51,25 @@ inline Vector<ElementType> vector_allocate(const size_t p_initial_capacity)
 	return Vector<ElementType>{0, span_allocate<ElementType>(p_initial_capacity)};
 };
 
+
+
 template<class ElementType>
 inline void vector_free(Vector<ElementType>* p_vector)
 {
 	span_free(&p_vector->Span);
 	*p_vector = vector_build<ElementType>(NULL, 0);
+};
+
+template<class ElementType>
+inline ElementType* vector_get_memory(Vector<ElementType>* p_vector)
+{
+	return p_vector->Span.Memory;
+};
+
+template<class ElementType>
+inline size_t vector_get_capacity(Vector<ElementType>* p_vector)
+{
+	return p_vector->Span.Capacity;
 };
 
 template<class ElementType>
@@ -85,6 +99,12 @@ inline ElementType vector_get_rv(Vector<ElementType>* p_vector, const size_t p_i
 	return p_vector->Span.Memory[p_index];
 };
 
+template<class ElementType>
+inline void vector_resize_expand(Vector<ElementType>* p_vector)
+{
+	span_resize(&p_vector->Span, p_vector->Span.Capacity == 0 ? 1 : (p_vector->Span.Capacity * 2));
+};
+
 
 template<class ElementType>
 inline void _vector_move_memory_down(Vector<ElementType>* p_vector, const size_t p_break_index, const size_t p_move_delta)
@@ -103,12 +123,11 @@ inline char vector_insert_array_at(Vector<ElementType>* p_vector, const Slice<El
 {
 #if CONTAINER_BOUND_TEST
 	_vector_bound_check(p_vector, p_index);
-	_vector_bound_head_check(p_vector, p_index); // Cannot insert at the head of the vector. use vector_push_back_array.
 #endif
 
 	if (p_vector->Size + p_elements->Size > p_vector->Span.Capacity)
 	{
-		span_resize(&p_vector->Span, p_vector->Span.Capacity == 0 ? 1 : (p_vector->Span.Capacity * 2));
+		vector_resize_expand(p_vector);
 		vector_insert_array_at(p_vector, p_elements, p_index);
 	}
 	else
@@ -133,12 +152,11 @@ inline char vector_insert_element_at(Vector<ElementType>* p_vector, const Elemen
 {
 #if CONTAINER_BOUND_TEST
 	_vector_bound_check(p_vector, p_index);
-	_vector_bound_head_check(p_vector, p_index); // Cannot insert at the head of the vector. use vector_push_back_element.
 #endif
 
 	if (p_vector->Size + 1 > p_vector->Span.Capacity)
 	{
-		span_resize(&p_vector->Span, p_vector->Span.Capacity == 0 ? 1 : (p_vector->Span.Capacity * 2));
+		vector_resize_expand(p_vector);
 		return vector_insert_element_at(p_vector, p_element, p_index);
 	}
 	else
@@ -163,7 +181,7 @@ inline char vector_push_back_array(Vector<ElementType>* p_vector, const Slice<El
 {
 	if (p_vector->Size + p_elements->Size >= p_vector->Span.Capacity)
 	{
-		span_resize(&p_vector->Span, p_vector->Span.Capacity == 0 ? 1 : (p_vector->Span.Capacity * 2));
+		vector_resize_expand(p_vector);
 		return vector_push_back_array(p_vector, p_elements);
 	}
 	else
@@ -186,7 +204,7 @@ inline char vector_push_back_element(Vector<ElementType>* p_vector, const Elemen
 {
 	if (p_vector->Size >= p_vector->Span.Capacity)
 	{
-		span_resize(&p_vector->Span, p_vector->Span.Capacity == 0 ? 1 : (p_vector->Span.Capacity * 2));
+		vector_resize_expand(p_vector);
 		return vector_push_back_element(p_vector, p_element);
 	}
 	else

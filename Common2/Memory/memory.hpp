@@ -17,12 +17,12 @@ inline void heap_free(char* p_memory)
 };
 
 
-inline char* heap_memcpy(char* p_dst, const char* p_src, const size_t p_size)
+inline char* memory_cpy(char* p_dst, const char* p_src, const size_t p_size)
 {
 	return (char*)::memcpy(p_dst, p_src, p_size);
 };
 
-inline static char* heap_memcpy_safe(char* p_dst, const size_t p_dst_size, const char* p_src, const  size_t p_size)
+inline static char* memory_cpy_safe(char* p_dst, const size_t p_dst_size, const char* p_src, const  size_t p_size)
 {
 #if STANDARD_ALLOCATION_BOUND_TEST
 	if (p_size > p_dst_size)
@@ -31,17 +31,17 @@ inline static char* heap_memcpy_safe(char* p_dst, const size_t p_dst_size, const
 	}
 #endif
 
-	return heap_memcpy(p_dst, p_src, p_size);
+	return memory_cpy(p_dst, p_src, p_size);
 };
 
 
-inline char* heap_memmove(char* p_dst, const char* p_src,const size_t p_size)
+inline char* memory_move(char* p_dst, const char* p_src,const size_t p_size)
 {
 	return (char*)::memmove(p_dst, p_src, p_size);
 };
 
 
-inline char* heap_memmove_safe(char* p_dst, const size_t p_dst_size, const char* p_src, const size_t p_size)
+inline char* memory_move_safe(char* p_dst, const size_t p_dst_size, const char* p_src, const size_t p_size)
 {
 #if STANDARD_ALLOCATION_BOUND_TEST
 	if (p_size > p_dst_size)
@@ -50,7 +50,12 @@ inline char* heap_memmove_safe(char* p_dst, const size_t p_dst_size, const char*
 	}
 #endif
 
-	return heap_memmove(p_dst, p_src, p_size);
+	return memory_move(p_dst, p_src, p_size);
+};
+
+inline char memory_compare(const char* p_source, const char* p_compared, const size_t p_size)
+{
+	return ::memcmp(p_source, p_compared, p_size) == 0;
 };
 
 
