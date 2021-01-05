@@ -100,13 +100,6 @@ inline ElementType vector_get_rv(Vector<ElementType>* p_vector, const size_t p_i
 };
 
 template<class ElementType>
-inline void vector_resize_expand(Vector<ElementType>* p_vector)
-{
-	span_resize(&p_vector->Span, p_vector->Span.Capacity == 0 ? 1 : (p_vector->Span.Capacity * 2));
-};
-
-
-template<class ElementType>
 inline void _vector_move_memory_down(Vector<ElementType>* p_vector, const size_t p_break_index, const size_t p_move_delta)
 {
 	span_move_memory_down(&p_vector->Span, p_vector->Size, p_break_index, p_move_delta);
@@ -125,18 +118,11 @@ inline char vector_insert_array_at(Vector<ElementType>* p_vector, const Slice<El
 	_vector_bound_check(p_vector, p_index);
 #endif
 
-	if (p_vector->Size + p_elements->Size > p_vector->Span.Capacity)
-	{
-		vector_resize_expand(p_vector);
-		vector_insert_array_at(p_vector, p_elements, p_index);
-	}
-	else
-	{
-		_vector_move_memory_down(p_vector, p_index, p_elements->Size);
-		span_copy_memory(&p_vector->Span, p_index, p_elements);
+	span_resize_until_capacity_met(&p_vector->Span, p_vector->Size + p_elements->Size);
+	_vector_move_memory_down(p_vector, p_index, p_elements->Size);
+	span_copy_memory(&p_vector->Span, p_index, p_elements);
 
-		p_vector->Size += p_elements->Size;
-	}
+	p_vector->Size += p_elements->Size;
 
 	return 1;
 };
@@ -154,17 +140,10 @@ inline char vector_insert_element_at(Vector<ElementType>* p_vector, const Elemen
 	_vector_bound_check(p_vector, p_index);
 #endif
 
-	if (p_vector->Size + 1 > p_vector->Span.Capacity)
-	{
-		vector_resize_expand(p_vector);
-		return vector_insert_element_at(p_vector, p_element, p_index);
-	}
-	else
-	{
-		_vector_move_memory_down(p_vector, p_index, 1);
-		p_vector->Span.Memory[p_index] = *p_element;
-		p_vector->Size += 1;
-	}
+	span_resize_until_capacity_met(&p_vector->Span, p_vector->Size + 1);
+	_vector_move_memory_down(p_vector, p_index, 1);
+	p_vector->Span.Memory[p_index] = *p_element;
+	p_vector->Size += 1;
 
 	return 1;
 };
@@ -179,16 +158,9 @@ inline char vector_insert_element_at_1v(Vector<ElementType>* p_vector, const Ele
 template<class ElementType>
 inline char vector_push_back_array(Vector<ElementType>* p_vector, const Slice<ElementType>* p_elements)
 {
-	if (p_vector->Size + p_elements->Size >= p_vector->Span.Capacity)
-	{
-		vector_resize_expand(p_vector);
-		return vector_push_back_array(p_vector, p_elements);
-	}
-	else
-	{
-		span_copy_memory(&p_vector->Span, p_vector->Size, p_elements);
-		p_vector->Size += p_elements->Size;
-	}
+	span_resize_until_capacity_met(&p_vector->Span, p_vector->Size + p_elements->Size);
+	span_copy_memory(&p_vector->Span, p_vector->Size, p_elements);
+	p_vector->Size += p_elements->Size;
 
 	return 1;
 };
@@ -202,16 +174,9 @@ inline char vector_push_back_array_1v(Vector<ElementType>* p_vector, const Slice
 template<class ElementType>
 inline char vector_push_back_element(Vector<ElementType>* p_vector, const ElementType* p_element)
 {
-	if (p_vector->Size >= p_vector->Span.Capacity)
-	{
-		vector_resize_expand(p_vector);
-		return vector_push_back_element(p_vector, p_element);
-	}
-	else
-	{
-		p_vector->Span.Memory[p_vector->Size] = *p_element;
-		p_vector->Size += 1;
-	}
+	span_resize_until_capacity_met(&p_vector->Span, p_vector->Size + 1);
+	p_vector->Span.Memory[p_vector->Size] = *p_element;
+	p_vector->Size += 1;
 
 	return 1;
 };

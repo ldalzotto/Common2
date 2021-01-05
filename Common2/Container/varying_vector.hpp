@@ -3,6 +3,11 @@
 using VaryingVectorMemory_t = Vector<char>;
 using VaryingVectorChunks_t = Vector<SliceIndex>;
 
+/*
+	A VaryingVector is a Vector which elements can have different sizes.
+	Elements are accessed vie the VaryingVectorChunks_t lookup table.
+	Memory is continuous.
+*/
 struct VaryingVector
 {
 	VaryingVectorMemory_t memory;
@@ -131,21 +136,16 @@ inline void varyingvector_expand_element(VaryingVector* p_varyingvector, const s
 	size_t l_size_delta = p_pushed_element->Size;
 	size_t l_new_varyingvector_size = p_varyingvector->memory.Size + l_size_delta;
 
-	if (l_new_varyingvector_size > vector_get_capacity(&p_varyingvector->memory))
-	{
-		vector_resize_expand(&p_varyingvector->memory);
-		varyingvector_expand_element(p_varyingvector, p_index, p_pushed_element);
-	}
-	else
-	{
-		vector_insert_array_at(&p_varyingvector->memory, p_pushed_element, l_updated_chunk->Begin + l_updated_chunk->Size);
-		l_updated_chunk->Size += l_size_delta;
+	span_resize_until_capacity_met(&p_varyingvector->memory.Span, l_new_varyingvector_size);
 
-		for (loop(i, p_index + 1, p_varyingvector->chunks.Size))
-		{
-			vector_get(&p_varyingvector->chunks, i)->Begin += l_size_delta;
-		}
+	vector_insert_array_at(&p_varyingvector->memory, p_pushed_element, l_updated_chunk->Begin + l_updated_chunk->Size);
+	l_updated_chunk->Size += l_size_delta;
+
+	for (loop(i, p_index + 1, p_varyingvector->chunks.Size))
+	{
+		vector_get(&p_varyingvector->chunks, i)->Begin += l_size_delta;
 	}
+
 };
 
 inline void varyingvector_shrink_element(VaryingVector* p_varyingvector, const size_t p_index, const size_t p_size_delta)

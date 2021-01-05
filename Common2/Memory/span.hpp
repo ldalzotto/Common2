@@ -40,6 +40,26 @@ inline char span_resize(Span<ElementType>* p_span, const size_t p_new_capacity)
 };
 
 template<class ElementType>
+inline void span_resize_until_capacity_met(Span<ElementType>* p_span, const size_t p_desired_capacity)
+{
+    size_t l_resized_capacity = p_span->Capacity;
+
+    if (l_resized_capacity >= p_desired_capacity)
+    {
+        return;
+    }
+
+    if (l_resized_capacity == 0) { l_resized_capacity = 1; }
+
+    while (l_resized_capacity < p_desired_capacity)
+    {
+        l_resized_capacity *= 2;
+    }
+
+    span_resize(p_span, l_resized_capacity);
+};
+
+template<class ElementType>
 inline void span_free(Span<ElementType>* p_span)
 {
     heap_free(cast(char*, p_span->Memory));

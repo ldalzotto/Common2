@@ -264,7 +264,7 @@ inline void varyingvector_test()
 		assert_true(varyingvector_get_size(&l_varyingvector) == 5);
 		varyingvector_erase_element_at(&l_varyingvector, 2);
 		assert_true(varyingvector_get_size(&l_varyingvector) == 4);
-		
+
 		assert_true(*varyingvector_get_element<size_t>(&l_varyingvector, 2).Begin == 3);
 		assert_true(*varyingvector_get_element<size_t>(&l_varyingvector, 3).Begin == 4);
 	}
@@ -299,7 +299,7 @@ inline void varyingvector_test()
 		size_t l_inserset_number = 30;
 		Slice<char> l_expansion_slice = slice_build_aschar_memory_elementnb(&l_inserset_number, 1);
 		varyingvector_expand_element(&l_varyingvector, 2, &l_expansion_slice);
-		
+
 		Slice<size_t> l_sizet_element_2 = slice_cast_0v<size_t>(varyingvector_get(&l_varyingvector, 2));
 		assert_true(l_sizet_element_2.Size == 2);
 		assert_true(slice_get_rv(&l_sizet_element_2, 1) == l_inserset_number);
