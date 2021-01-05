@@ -265,8 +265,8 @@ inline void varyingvector_test()
 		varyingvector_erase_element_at(&l_varyingvector, 2);
 		assert_true(varyingvector_get_size(&l_varyingvector) == 4);
 		
-		assert_true(*varyingvector_get_typed<size_t>(&l_varyingvector, 2).Begin == 3);
-		assert_true(*varyingvector_get_typed<size_t>(&l_varyingvector, 3).Begin == 4);
+		assert_true(*varyingvector_get_element<size_t>(&l_varyingvector, 2).Begin == 3);
+		assert_true(*varyingvector_get_element<size_t>(&l_varyingvector, 3).Begin == 4);
 	}
 
 	varyingvector_free(&l_varyingvector);
@@ -283,12 +283,53 @@ inline void varyingvector_test()
 		varyingvector_erase_array_at(&l_varyingvector, 2, 2);
 		assert_true(varyingvector_get_size(&l_varyingvector) == 3);
 
-		assert_true(*varyingvector_get_typed<size_t>(&l_varyingvector, 2).Begin == 4);
+		assert_true(*varyingvector_get_element<size_t>(&l_varyingvector, 2).Begin == 4);
+	}
+
+	varyingvector_free(&l_varyingvector);
+	l_varyingvector = varyingvector_allocate_default();
+
+	// varyingvector_expand_element varyingvector_shrink_element
+	{
+		for (loop(i, 0, 5))
+		{
+			varyingvector_push_back_element_1v(&l_varyingvector, cast(size_t, i));
+		}
+
+		size_t l_inserset_number = 30;
+		Slice<char> l_expansion_slice = slice_build_aschar_memory_elementnb(&l_inserset_number, 1);
+		varyingvector_expand_element(&l_varyingvector, 2, &l_expansion_slice);
+		
+		Slice<size_t> l_sizet_element_2 = slice_cast_0v<size_t>(varyingvector_get(&l_varyingvector, 2));
+		assert_true(l_sizet_element_2.Size == 2);
+		assert_true(slice_get_rv(&l_sizet_element_2, 1) == l_inserset_number);
+
+		{
+			size_t* l_sizet_element_3 = slice_cast_singleelement_0v<size_t>(varyingvector_get(&l_varyingvector, 3));
+			assert_true(*l_sizet_element_3 == 3);
+		}
+
+		varyingvector_shrink_element(&l_varyingvector, 2, sizeof(size_t));
+		l_sizet_element_2 = slice_cast_0v<size_t>(varyingvector_get(&l_varyingvector, 2));
+		assert_true(l_sizet_element_2.Size == 1);
+		assert_true(slice_get_rv(&l_sizet_element_2, 0) == 2);
+
+		{
+			size_t* l_sizet_element_3 = slice_cast_singleelement_0v<size_t>(varyingvector_get(&l_varyingvector, 3));
+			assert_true(*l_sizet_element_3 == 3);
+		}
+	}
+
+	{
+		for (varyingvector_loop(&l_varyingvector, i))
+		{
+			varyingvector_get(&l_varyingvector, i);
+		}
 	}
 
 	{
 		varyingvector_free(&l_varyingvector);
-
+		assert_true(varyingvector_get_size(&l_varyingvector) == 0);
 	}
 };
 

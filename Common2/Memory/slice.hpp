@@ -28,6 +28,12 @@ inline Slice<ElementType> slice_build_memory_offset_elementnb(ElementType* p_mem
 	return Slice<ElementType>{p_memory + p_offset, p_element_nb};
 };
 
+template<class ElementType>
+inline Slice<char> slice_build_aschar_memory_elementnb(ElementType* p_memory, const size_t p_element_nb)
+{
+	return Slice<char>{cast(char*, p_memory), sizeof(ElementType) * p_element_nb};
+};
+
 template<class CastedType>
 inline Slice<CastedType> slice_cast(Slice<char>* p_slice)
 {
@@ -45,6 +51,55 @@ template<class CastedType>
 inline Slice<CastedType> slice_cast_0v(Slice<char> p_slice)
 {
 	return slice_cast<CastedType>(&p_slice);
+};
+
+template<class CastedType>
+inline CastedType* slice_cast_singleelement(Slice<char>* p_slice)
+{
+#if CONTAINER_BOUND_TEST
+	if (p_slice->Size < sizeof(CastedType))
+	{
+		abort();
+	}
+#endif
+	return cast(CastedType*, p_slice->Begin);
+};
+
+template<class CastedType>
+inline CastedType* slice_cast_singleelement_0v(Slice<char> p_slice)
+{
+	return slice_cast_singleelement<CastedType>(&p_slice);
+};
+
+template<class CastedType>
+inline Slice<CastedType> slice_cast_fixedelementnb(Slice<char>* p_slice, const size_t p_element_nb)
+{
+#if CONTAINER_BOUND_TEST
+	if (p_slice->Size < (sizeof(CastedType) * p_element_nb))
+	{
+		abort();
+	}
+#endif
+
+	return slice_build_memory_elementnb(cast(CastedType*, p_slice->Begin), p_element_nb);
+};
+
+template<class CastedType>
+inline Slice<CastedType> slice_cast_fixedelementnb_0v(Slice<char> p_slice, const size_t p_element_nb)
+{
+	return slice_cast_fixedelementnb<CastedType>(&p_slice, p_element_nb);
+}
+
+template<class ElementType>
+inline ElementType* slice_get(Slice<ElementType>* p_slice, const size_t p_index)
+{
+	return &p_slice->Begin[p_index];
+};
+
+template<class ElementType>
+inline ElementType slice_get_rv(Slice<ElementType>* p_slice, const size_t p_index)
+{
+	return *slice_get(p_slice, p_index);
 };
 
 template<class ElementType>

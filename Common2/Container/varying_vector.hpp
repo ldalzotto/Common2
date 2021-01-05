@@ -120,50 +120,50 @@ inline void varyingvector_erase_array_at(VaryingVector* p_varyingvector, const s
 	vector_erase_array_at(&p_varyingvector->chunks, p_index, p_element_nb);
 };
 
-inline void varyingvector_resize_element(VaryingVector* p_varyingvector, const size_t p_index, const size_t p_new_size)
+inline void varyingvector_expand_element(VaryingVector* p_varyingvector, const size_t p_index, const Slice<char>* p_pushed_element)
 {
 	SliceIndex* l_updated_chunk = vector_get(&p_varyingvector->chunks, p_index);
-	// size_t l_updated_chunk_being_
+
 #if CONTAINER_BOUND_TEST
-	if (l_updated_chunk->Size == p_new_size)
-	{
-		abort();
-	}
+	assert_true(p_pushed_element->Size != 0);
 #endif
 
+	size_t l_size_delta = p_pushed_element->Size;
+	size_t l_new_varyingvector_size = p_varyingvector->memory.Size + l_size_delta;
 
-	int l_size_delta = cast(int, (p_new_size - l_updated_chunk->Size));
-
-	if ((p_varyingvector->memory.Size + l_size_delta) > vector_get_capacity(&p_varyingvector->memory))
+	if (l_new_varyingvector_size > vector_get_capacity(&p_varyingvector->memory))
 	{
 		vector_resize_expand(&p_varyingvector->memory);
-		varyingvector_resize_element(p_varyingvector, p_index, p_new_size);
+		varyingvector_expand_element(p_varyingvector, p_index, p_pushed_element);
 	}
 	else
 	{
-
-		// TODO -> the varyingvector_resize_element should take a slice as a parameter instead of p_new_size that provided pushed memory value
-		// maybe having two functions (resize_element_expand / resize_element_shring)
-
-		// expand
-		if (p_new_size > l_updated_chunk->Size)
-		{
-			vector_insert_array_at_1v(&p_varyingvector->memory, slice_build_memory_elementnb<char>(cast(char*, p_varyingvector), l_size_delta), l_updated_chunk->Begin + l_updated_chunk->Size);
-		}
-		else // shrink
-		{
-			vector_erase_array_at(&p_varyingvector->memory, l_updated_chunk->Begin + l_updated_chunk->Size + l_size_delta, -l_size_delta);
-		}
-
+		vector_insert_array_at(&p_varyingvector->memory, p_pushed_element, l_updated_chunk->Begin + l_updated_chunk->Size);
 		l_updated_chunk->Size += l_size_delta;
 
 		for (loop(i, p_index + 1, p_varyingvector->chunks.Size))
 		{
 			vector_get(&p_varyingvector->chunks, i)->Begin += l_size_delta;
 		}
-
 	}
+};
 
+inline void varyingvector_shrink_element(VaryingVector* p_varyingvector, const size_t p_index, const size_t p_size_delta)
+{
+	SliceIndex* l_updated_chunk = vector_get(&p_varyingvector->chunks, p_index);
+
+#if CONTAINER_BOUND_TEST
+	assert_true(p_size_delta != 0);
+	assert_true(p_size_delta <= l_updated_chunk->Size);
+#endif
+
+	vector_erase_array_at(&p_varyingvector->memory, l_updated_chunk->Begin + l_updated_chunk->Size - p_size_delta, p_size_delta);
+	l_updated_chunk->Size -= p_size_delta;
+
+	for (loop(i, p_index + 1, p_varyingvector->chunks.Size))
+	{
+		vector_get(&p_varyingvector->chunks, i)->Begin -= p_size_delta;
+	}
 };
 
 inline Slice<char> varyingvector_get(VaryingVector* p_varyingvector, const size_t p_index)
@@ -177,9 +177,11 @@ inline Slice<char> varyingvector_get(VaryingVector* p_varyingvector, const size_
 };
 
 template<class ElementType>
-inline Slice<ElementType> varyingvector_get_typed(VaryingVector* p_varyingvector, const size_t p_index)
+inline Slice<ElementType> varyingvector_get_element(VaryingVector* p_varyingvector, const size_t p_index)
 {
 	return slice_cast_0v<ElementType>(
 		varyingvector_get(p_varyingvector, p_index)
 		);
 };
+
+#define varyingvector_loop(VaryingVectorVariable, Iteratorname) size_t Iteratorname = 0; Iteratorname < varyingvector_get_size((VaryingVectorVariable)); Iteratorname++
