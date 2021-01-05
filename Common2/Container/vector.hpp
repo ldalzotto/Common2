@@ -112,12 +112,8 @@ inline void _vector_move_memory_up(Vector<ElementType>* p_vector, const size_t p
 };
 
 template<class ElementType>
-inline char vector_insert_array_at(Vector<ElementType>* p_vector, const Slice<ElementType>* p_elements, const size_t p_index)
+inline char _vector_insert_array_at_unchecked(Vector<ElementType>* p_vector, const Slice<ElementType>* p_elements, const size_t p_index)
 {
-#if CONTAINER_BOUND_TEST
-	_vector_bound_check(p_vector, p_index);
-#endif
-
 	span_resize_until_capacity_met(&p_vector->Span, p_vector->Size + p_elements->Size);
 	_vector_move_memory_down(p_vector, p_index, p_elements->Size);
 	span_copy_memory(&p_vector->Span, p_index, p_elements);
@@ -128,18 +124,25 @@ inline char vector_insert_array_at(Vector<ElementType>* p_vector, const Slice<El
 };
 
 template<class ElementType>
+inline char vector_insert_array_at(Vector<ElementType>* p_vector, const Slice<ElementType>* p_elements, const size_t p_index)
+{
+#if CONTAINER_BOUND_TEST
+	_vector_bound_check(p_vector, p_index);
+	_vector_bound_head_check(p_vector, p_index); // cannot insert at head. Use vector_insert_array_at_always instead.
+#endif
+
+	return _vector_insert_array_at_unchecked(p_vector, p_elements, p_index);
+};
+
+template<class ElementType>
 inline char vector_insert_array_at_1v(Vector<ElementType>* p_vector, const Slice<ElementType> p_elements, const size_t p_index)
 {
 	return vector_insert_array_at(p_vector, &p_elements, p_index);
 }
 
 template<class ElementType>
-inline char vector_insert_element_at(Vector<ElementType>* p_vector, const ElementType* p_element, const size_t p_index)
+inline char _vector_insert_element_at_unchecked(Vector<ElementType>* p_vector, const ElementType* p_element, const size_t p_index)
 {
-#if CONTAINER_BOUND_TEST
-	_vector_bound_check(p_vector, p_index);
-#endif
-
 	span_resize_until_capacity_met(&p_vector->Span, p_vector->Size + 1);
 	_vector_move_memory_down(p_vector, p_index, 1);
 	p_vector->Span.Memory[p_index] = *p_element;
@@ -149,11 +152,21 @@ inline char vector_insert_element_at(Vector<ElementType>* p_vector, const Elemen
 };
 
 template<class ElementType>
+inline char vector_insert_element_at(Vector<ElementType>* p_vector, const ElementType* p_element, const size_t p_index)
+{
+#if CONTAINER_BOUND_TEST
+	_vector_bound_check(p_vector, p_index);
+	_vector_bound_head_check(p_vector, p_index); // cannot insert at head. Use vector_insert_element_at_always instead.
+#endif
+
+	return _vector_insert_element_at_unchecked(p_vector, p_element, p_index);
+};
+
+template<class ElementType>
 inline char vector_insert_element_at_1v(Vector<ElementType>* p_vector, const ElementType p_element, const size_t p_index)
 {
 	return vector_insert_element_at(p_vector, &p_element, p_index);
 };
-
 
 template<class ElementType>
 inline char vector_push_back_array(Vector<ElementType>* p_vector, const Slice<ElementType>* p_elements)
@@ -188,6 +201,42 @@ inline char vector_push_back_element_1v(Vector<ElementType>* p_vector, const Ele
 };
 
 
+
+template<class ElementType>
+inline char vector_insert_array_at_always(Vector<ElementType>* p_vector, const Slice<ElementType>* p_elements, const size_t p_index)
+{
+#if CONTAINER_BOUND_TEST
+	_vector_bound_check(p_vector, p_index);
+#endif
+	if (p_index == p_vector->Size)
+	{
+		return vector_push_back_array(p_vector, p_elements);
+	}
+	else
+	{
+		return _vector_insert_array_at_unchecked(p_vector, p_elements, p_index);
+	}
+};
+
+
+template<class ElementType>
+inline char vector_insert_element_at_always(Vector<ElementType>* p_vector, const ElementType* p_element, const size_t p_index)
+{
+#if CONTAINER_BOUND_TEST
+	_vector_bound_check(p_vector, p_index);
+#endif
+
+	if (p_index == p_vector->Size)
+	{
+		return vector_push_back_element(p_vector, p_element);
+	}
+	else
+	{
+		return _vector_insert_element_at_unchecked(p_vector, p_element, p_index);
+	}
+};
+
+
 template<class ElementType>
 inline char vector_erase_array_at(Vector<ElementType>* p_vector, const size_t p_index, const size_t p_element_nb)
 {
@@ -195,7 +244,7 @@ inline char vector_erase_array_at(Vector<ElementType>* p_vector, const size_t p_
 #if CONTAINER_BOUND_TEST
 	_vector_bound_check(p_vector, p_index);
 	_vector_bound_check(p_vector, p_index + p_element_nb);
-	_vector_bound_head_check(p_vector, p_index); // use vector_pop_back_array
+	_vector_bound_head_check(p_vector, p_index); // use vector_pop_back_array //TODO -> create a "always" variant of vector_erase_array_at
 #endif
 
 	_vector_move_memory_up(p_vector, p_index, p_element_nb);
@@ -209,7 +258,7 @@ inline char vector_erase_element_at(Vector<ElementType>* p_vector, const size_t 
 {
 #if CONTAINER_BOUND_TEST
 	_vector_bound_check(p_vector, p_index);
-	_vector_bound_head_check(p_vector, p_index); // use vector_pop_back
+	_vector_bound_head_check(p_vector, p_index); // use vector_pop_back //TODO -> create a "always" variant of vector_erase_element_at
 #endif
 
 	_vector_move_memory_up(p_vector, p_index, 1);

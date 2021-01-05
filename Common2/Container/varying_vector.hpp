@@ -77,6 +77,18 @@ inline void varyingvector_pop_back(VaryingVector* p_varyingvector)
 	vector_pop_back(&p_varyingvector->chunks);
 };
 
+inline void varyingvector_insert_at(VaryingVector* p_varyingvector, const Slice<char>* p_bytes, const size_t p_index)
+{
+	SliceIndex* l_break_chunk = vector_get(&p_varyingvector->chunks, p_index);
+	vector_insert_array_at(&p_varyingvector->memory, p_bytes, l_break_chunk->Begin);
+	vector_insert_element_at_1v(&p_varyingvector->chunks, sliceindex_build(l_break_chunk->Begin, p_bytes->Size), p_index);
+
+	for (loop(i, p_index + 1, p_varyingvector->chunks.Size))
+	{
+		vector_get(&p_varyingvector->chunks, i)->Begin += p_bytes->Size;
+	}
+};
+
 inline void varyingvector_erase_element_at(VaryingVector* p_varyingvector, const size_t p_index)
 {
 	SliceIndex* l_chunk = vector_get(&p_varyingvector->chunks, p_index);
@@ -93,7 +105,6 @@ inline void varyingvector_erase_element_at(VaryingVector* p_varyingvector, const
 
 	vector_erase_element_at(&p_varyingvector->chunks, p_index);
 };
-
 
 inline void varyingvector_erase_array_at(VaryingVector* p_varyingvector, const size_t p_index, const size_t p_element_nb)
 {
@@ -125,7 +136,28 @@ inline void varyingvector_erase_array_at(VaryingVector* p_varyingvector, const s
 	vector_erase_array_at(&p_varyingvector->chunks, p_index, p_element_nb);
 };
 
-inline void varyingvector_expand_element(VaryingVector* p_varyingvector, const size_t p_index, const Slice<char>* p_pushed_element)
+
+
+inline void varyingvector_expand_element(VaryingVector* p_varyingvector, const size_t p_index, const size_t p_expansion_size)
+{
+	SliceIndex* l_updated_chunk = vector_get(&p_varyingvector->chunks, p_index);
+
+#if CONTAINER_BOUND_TEST
+	assert_true(p_expansion_size != 0);
+#endif
+
+	size_t l_new_varyingvector_size = p_varyingvector->memory.Size + p_expansion_size;
+
+	span_resize_until_capacity_met(&p_varyingvector->memory.Span, l_new_varyingvector_size);
+	l_updated_chunk->Size += p_expansion_size;
+
+	for (loop(i, p_index + 1, p_varyingvector->chunks.Size))
+	{
+		vector_get(&p_varyingvector->chunks, i)->Begin += p_expansion_size;
+	}
+};
+
+inline void varyingvector_expand_element_with_value(VaryingVector* p_varyingvector, const size_t p_index, const Slice<char>* p_pushed_element)
 {
 	SliceIndex* l_updated_chunk = vector_get(&p_varyingvector->chunks, p_index);
 
@@ -138,14 +170,18 @@ inline void varyingvector_expand_element(VaryingVector* p_varyingvector, const s
 
 	span_resize_until_capacity_met(&p_varyingvector->memory.Span, l_new_varyingvector_size);
 
-	vector_insert_array_at(&p_varyingvector->memory, p_pushed_element, l_updated_chunk->Begin + l_updated_chunk->Size);
+	vector_insert_array_at_always(&p_varyingvector->memory, p_pushed_element, l_updated_chunk->Begin + l_updated_chunk->Size);
 	l_updated_chunk->Size += l_size_delta;
 
 	for (loop(i, p_index + 1, p_varyingvector->chunks.Size))
 	{
 		vector_get(&p_varyingvector->chunks, i)->Begin += l_size_delta;
 	}
+};
 
+inline void varyingvector_expand_element_with_value_2v(VaryingVector* p_varyingvector, const size_t p_index, const Slice<char> p_pushed_element)
+{
+	varyingvector_expand_element_with_value(p_varyingvector, p_index, &p_pushed_element);
 };
 
 inline void varyingvector_shrink_element(VaryingVector* p_varyingvector, const size_t p_index, const size_t p_size_delta)
@@ -166,6 +202,23 @@ inline void varyingvector_shrink_element(VaryingVector* p_varyingvector, const s
 	}
 };
 
+inline void varyingvector_writeto_element(VaryingVector* p_varyingvector, const size_t p_index, const size_t p_insertion_offset, const Slice<char>* p_inserted_element)
+{
+	SliceIndex* l_updated_chunk = vector_get(&p_varyingvector->chunks, p_index);
+	Slice<char> l_updated_chunk_slice = 
+		slice_slide_rv0v(
+			slice_build_aschar_memory_elementnb(vector_get_memory(&p_varyingvector->memory) + l_updated_chunk->Begin, l_updated_chunk->Size),
+			p_insertion_offset
+		);
+
+	slice_memcpy(&l_updated_chunk_slice, p_inserted_element);
+};
+
+inline void varyingvector_writeto_element_3v(VaryingVector* p_varyingvector, const size_t p_index, const size_t p_insertion_offset, const Slice<char> p_inserted_element)
+{
+	varyingvector_writeto_element(p_varyingvector, p_index, p_insertion_offset, &p_inserted_element);
+};
+
 inline Slice<char> varyingvector_get(VaryingVector* p_varyingvector, const size_t p_index)
 {
 	SliceIndex* l_chunk = vector_get(&p_varyingvector->chunks, p_index);
@@ -181,7 +234,7 @@ inline Slice<ElementType> varyingvector_get_element(VaryingVector* p_varyingvect
 {
 	return slice_cast_0v<ElementType>(
 		varyingvector_get(p_varyingvector, p_index)
-		);
+	);
 };
 
 #define varyingvector_loop(VaryingVectorVariable, Iteratorname) size_t Iteratorname = 0; Iteratorname < varyingvector_get_size((VaryingVectorVariable)); Iteratorname++

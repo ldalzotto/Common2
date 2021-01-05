@@ -289,7 +289,7 @@ inline void varyingvector_test()
 	varyingvector_free(&l_varyingvector);
 	l_varyingvector = varyingvector_allocate_default();
 
-	// varyingvector_expand_element varyingvector_shrink_element
+	// varyingvector_expand_element_with_value varyingvector_shrink_element
 	{
 		for (loop(i, 0, 5))
 		{
@@ -298,7 +298,7 @@ inline void varyingvector_test()
 
 		size_t l_inserset_number = 30;
 		Slice<char> l_expansion_slice = slice_build_aschar_memory_elementnb(&l_inserset_number, 1);
-		varyingvector_expand_element(&l_varyingvector, 2, &l_expansion_slice);
+		varyingvector_expand_element_with_value(&l_varyingvector, 2, &l_expansion_slice);
 
 		Slice<size_t> l_sizet_element_2 = slice_cast_0v<size_t>(varyingvector_get(&l_varyingvector, 2));
 		assert_true(l_sizet_element_2.Size == 2);
@@ -320,6 +320,24 @@ inline void varyingvector_test()
 		}
 	}
 
+	// varyingvector_writeto_element
+	{
+		size_t l_element_0 = 10;
+		size_t l_element_1 = 20;
+		size_t l_element_2 = 30;
+
+		varyingvector_expand_element(&l_varyingvector, 2, sizeof(size_t) * 3);
+		varyingvector_writeto_element_3v(&l_varyingvector, 2, 0, slice_build_aschar_memory_singleelement(&l_element_0));
+		varyingvector_writeto_element_3v(&l_varyingvector, 2, 2 * sizeof(size_t), slice_build_aschar_memory_singleelement(&l_element_2));
+		varyingvector_writeto_element_3v(&l_varyingvector, 2, 1 * sizeof(size_t), slice_build_aschar_memory_singleelement(&l_element_1));
+
+
+		Slice<char> l_varyingvector_element_2 = varyingvector_get(&l_varyingvector, 2);
+		assert_true(*cast(size_t*, l_varyingvector_element_2.Begin) == l_element_0);
+		assert_true(*slice_slide_rv(&l_varyingvector_element_2, sizeof(size_t)).Begin == l_element_1);
+		assert_true(*slice_slide_rv(&l_varyingvector_element_2, 2 * sizeof(size_t)).Begin == l_element_2);
+	}
+
 	{
 		for (varyingvector_loop(&l_varyingvector, i))
 		{
@@ -331,6 +349,72 @@ inline void varyingvector_test()
 		varyingvector_free(&l_varyingvector);
 		assert_true(varyingvector_get_size(&l_varyingvector) == 0);
 	}
+};
+
+inline void vectorofvector_test()
+{
+	//TODO -> VectorOfVector<size_t> isn't type strict when calling "vectorofvector_XXXX" methods
+	VectorOfVector<size_t> l_vectorofvector_size_t = varyingvector_allocate_default();
+
+	// vectorofvector_push_back vectorofvector_push_back_element
+	{
+		Span<size_t> l_sizets = span_allocate<size_t>(10);
+		for (loop(i, 0, l_sizets.Capacity))
+		{
+			*slice_get(&l_sizets.slice, i) = i;
+		}
+
+		vectorofvector_push_back<size_t>(&l_vectorofvector_size_t);
+
+		vectorofvector_push_back_element(&l_vectorofvector_size_t, &l_sizets.slice);
+		VectorOfVector_Element<size_t> l_element =
+			vectorofvector_get<size_t>(
+				&l_vectorofvector_size_t,
+				varyingvector_get_size(&l_vectorofvector_size_t) - 1
+				);
+
+		vectorofvector_push_back<size_t>(&l_vectorofvector_size_t);
+
+		assert_true(l_element.Header.Size == l_sizets.Capacity);
+		for (loop(i, 0, l_sizets.Capacity))
+		{
+			assert_true(slice_get_rv(&l_element.Memory, i) == i);
+		}
+
+		span_free(&l_sizets);
+	}
+
+	// vectorofvector_insert_at 
+	{
+	}
+
+	// vectorofvector_element_push_back_element
+	{
+		for (loop(i, 0, 2))
+		{
+			vectorofvector_push_back<size_t>(&l_vectorofvector_size_t);
+
+			size_t l_element = 30;
+			size_t l_index = varyingvector_get_size(&l_vectorofvector_size_t) - 2;
+			vectorofvector_element_push_back_element(&l_vectorofvector_size_t, l_index, &l_element);
+			VectorOfVector_Element<size_t> l_element_nested = vectorofvector_get<size_t>(&l_vectorofvector_size_t, l_index);
+			assert_true(l_element_nested.Header.Size == 1);
+			assert_true(slice_get_rv(&l_element_nested.Memory, 0) == l_element);
+
+			l_element = 35;
+			vectorofvector_element_clear<size_t>(&l_vectorofvector_size_t, l_index);
+			vectorofvector_element_push_back_element(&l_vectorofvector_size_t, l_index, &l_element);
+			assert_true(l_element_nested.Header.Size == 1);
+			assert_true(slice_get_rv(&l_element_nested.Memory, 0) == l_element);
+		}
+	}
+
+	// vectorofvector_element_push_back_array
+	{
+	}
+
+
+	varyingvector_free(&l_vectorofvector_size_t);
 };
 
 inline void sandbox_test()
@@ -350,7 +434,7 @@ inline void sandbox_test()
 			assert_true(*vector_get(&l_vector_sizet, i) == l_elements[i - l_old_size]);
 		}
 
-		vector_insert_array_at(&l_vector_sizet, &l_elements_slice, l_vector_sizet.Size);
+		vector_insert_array_at_always(&l_vector_sizet, &l_elements_slice, l_vector_sizet.Size);
 	}
 
 
@@ -362,5 +446,6 @@ int main()
 	vector_test();
 	pool_test();
 	varyingvector_test();
+	vectorofvector_test();
 	sandbox_test();
 }

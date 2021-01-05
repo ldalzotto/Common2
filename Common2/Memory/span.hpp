@@ -7,8 +7,15 @@
 template<class ElementType>
 struct Span 
 {
-	size_t Capacity;
-	ElementType* Memory;
+    union
+    {
+        struct
+        {
+            size_t Capacity;
+            ElementType* Memory;
+        };
+        Slice<ElementType> slice;
+    };
 };
 
 template<class ElementType>
@@ -125,4 +132,10 @@ inline void span_copy_memory(Span<ElementType>* p_span, const size_t p_copy_inde
         &l_target,
         p_elements
     );
+};
+
+template<class ElementType>
+inline void span_copy_memory_2v(Span<ElementType>* p_span, const size_t p_copy_index, const Slice<ElementType> p_elements)
+{
+    span_copy_memory<ElementType>(p_span, p_copy_index, &p_elements);
 };
