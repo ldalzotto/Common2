@@ -11,11 +11,6 @@
 	A VectorOfVector is a chain of resizable Vector allocated on the same memory block.
 	Every nested vectors can be altered with "vectorofvector_element_*" functions.
 */
-
-/*
-template<class ElementType>
-using VectorOfVector = VaryingVector;
-*/
 template<class ElementType>
 struct VectorOfVector
 {
@@ -102,6 +97,12 @@ inline VectorOfVector<ElementType> vectorofvector_allocate_default()
 };
 
 template<class ElementType>
+inline void vectorofvector_free(VectorOfVector<ElementType>* p_vector_of_vector)
+{
+	varyingvector_free(&p_vector_of_vector->varying_vector);
+};
+
+template<class ElementType>
 inline void vectorofvector_push_back(VectorOfVector<ElementType>* p_vector_of_vector)
 {
 	VectorOfVector_VectorHeader l_header = _vectorofvector_vectorheader_build_default();
@@ -110,7 +111,7 @@ inline void vectorofvector_push_back(VectorOfVector<ElementType>* p_vector_of_ve
 };
 
 template<class ElementType>
-inline void vectorofvector_push_back_element(VectorOfVector<ElementType>* p_vector_of_vector, Slice<ElementType>* p_vector_elements)
+inline void vectorofvector_push_back_element(VectorOfVector<ElementType>* p_vector_of_vector, const Slice<ElementType>* p_vector_elements)
 {
 	Span<char> l_pushed_memory = _vectorofvector_vectorheader_allocate_vectorelements(p_vector_elements);
 	varyingvector_push_back(&p_vector_of_vector->varying_vector, &l_pushed_memory.slice);

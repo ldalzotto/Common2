@@ -505,9 +505,49 @@ inline void vectorofvector_test()
 	}
 
 	{
-		varyingvector_free(&l_vectorofvector_size_t.varying_vector);
+		vectorofvector_free(&l_vectorofvector_size_t);
 	}
 
+};
+
+inline void poolofvector_test()
+{
+	PoolOfVector<size_t> l_pool_of_vector = poolofvector_allocate_default<size_t>();
+
+	// poolofvector_alloc_vector poolofvector_element_push_back_element poolofvector_release_vector
+	{
+		PoolOfVectorToken<size_t> l_vector_0 = poolofvector_alloc_vector(&l_pool_of_vector);
+
+		size_t l_element = 100;
+		poolofvector_element_push_back_element(&l_pool_of_vector, &l_vector_0, &l_element);
+
+		VectorOfVector_Element<size_t> l_vector_mem = poolofvector_get_vector(&l_pool_of_vector, &l_vector_0);
+		assert_true(l_vector_mem.Header.Size == 1);
+		assert_true(slice_get_rv(&l_vector_mem.Memory, 0) == l_element);
+
+		poolofvector_release_vector(&l_pool_of_vector, &l_vector_0);
+		
+		PoolOfVectorToken<size_t> l_vector_0_new = poolofvector_alloc_vector(&l_pool_of_vector);
+		assert_true(l_vector_0_new.tok == l_vector_0.tok);
+		l_vector_mem = poolofvector_get_vector(&l_pool_of_vector, &l_vector_0);
+		assert_true(l_vector_mem.Header.Size == 0);
+	}
+
+	// poolofvector_alloc_vector_with_values
+	{
+		size_t l_elements[3] = { 100,200,300 };
+		Slice<size_t> l_elements_slice = slice_build_memory_elementnb(l_elements, 3);
+		PoolOfVectorToken<size_t> l_vector_0 = poolofvector_alloc_vector_with_values(&l_pool_of_vector, &l_elements_slice);
+
+		VectorOfVector_Element<size_t> l_vector_mem = poolofvector_get_vector(&l_pool_of_vector, &l_vector_0);
+		assert_true(l_vector_mem.Header.Size == 3);
+		for (loop(i, 0, 3))
+		{
+			assert_true(slice_get_rv(&l_vector_mem.Memory, i) == l_elements[i]);
+		}
+	}
+
+	poolofvector_free(&l_pool_of_vector);
 };
 
 inline void sandbox_test()
@@ -538,5 +578,6 @@ int main()
 	pool_test();
 	varyingvector_test();
 	vectorofvector_test();
+	poolofvector_test();
 	sandbox_test();
 }
