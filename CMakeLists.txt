@@ -21,10 +21,9 @@ else()
 	add_compile_definitions(USE_OPTICK=0)
 endif()
 
-
 add_library(Common2 INTERFACE)
 target_include_directories(Common2 INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(Common2Test "./test/test.cpp")
+add_executable(Common2Test "./test/test.cpp" )
 target_include_directories(Common2Test INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(Common2Test PUBLIC Common2)

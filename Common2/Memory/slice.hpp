@@ -28,11 +28,22 @@ inline Slice<ElementType> slice_build_memory_offset_elementnb(ElementType* p_mem
 	return Slice<ElementType>{p_element_nb, p_memory + p_offset};
 };
 
+template<class ElementType>
+inline Slice<char> slice_build_aschar(ElementType* p_memory, const size_t p_begin, const size_t p_end)
+{
+	return Slice<char>{sizeof(ElementType)* (p_end - p_begin), cast(char*, (p_memory + p_begin))};
+};
 
 template<class ElementType>
 inline Slice<char> slice_build_aschar_slice(const Slice<ElementType>* p_slice)
 {
 	return Slice<char>{sizeof(ElementType) * p_slice->Size, cast(char*, p_slice->Begin)};
+};
+
+template<class ElementType>
+inline Slice<char> slice_build_aschar_slice_0v(const Slice<ElementType> p_slice)
+{
+	return slice_build_aschar_slice(&p_slice);
 };
 
 template<class ElementType>
@@ -114,6 +125,8 @@ inline ElementType slice_get_rv(Slice<ElementType>* p_slice, const size_t p_inde
 {
 	return *slice_get(p_slice, p_index);
 };
+
+// #define slice_get_rv(p_slice, p_index) (*slice_get(p_slice, p_index))
 
 template<class ElementType>
 inline void slice_slide(Slice<ElementType>* p_slice, const size_t p_offset_index)
