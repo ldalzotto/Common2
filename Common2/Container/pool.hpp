@@ -139,6 +139,22 @@ inline ElementType pool_get_rv1v(Pool<ElementType>* p_pool, const Token<ElementT
 };
 
 template<class ElementType>
+inline Token<ElementType> pool_alloc_element_empty(Pool<ElementType>* p_pool)
+{
+	if (!vector_empty(&p_pool->free_blocks))
+	{
+		Token(ElementType) l_availble_token = vector_get_rv(&p_pool->free_blocks, p_pool->free_blocks.Size - 1);
+		vector_pop_back(&p_pool->free_blocks);
+		return l_availble_token;
+	}
+	else
+	{
+		vector_push_back_element_empty(&p_pool->memory);
+		return Token(ElementType) { p_pool->memory.Size - 1 };
+	}
+}
+
+template<class ElementType>
 inline Token<ElementType> pool_alloc_element(Pool<ElementType>* p_pool, const ElementType* p_element)
 {
 	if (!vector_empty(&p_pool->free_blocks))

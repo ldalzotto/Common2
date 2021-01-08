@@ -20,3 +20,4 @@
 
 #include "./Container/Specialization/vector_of_vector.hpp"
 #include "./Container/Specialization/pool_of_vector.hpp"
+#include "./Container/Specialization/pool_indexed.hpp"

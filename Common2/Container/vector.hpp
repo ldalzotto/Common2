@@ -185,6 +185,14 @@ inline char vector_push_back_array_1v(Vector<ElementType>* p_vector, const Slice
 };
 
 template<class ElementType>
+inline char vector_push_back_element_empty(Vector<ElementType>* p_vector)
+{
+	span_resize_until_capacity_met(&p_vector->Span, p_vector->Size + 1);
+	p_vector->Size += 1;
+	return 1;
+};
+
+template<class ElementType>
 inline char vector_push_back_element(Vector<ElementType>* p_vector, const ElementType* p_element)
 {
 	span_resize_until_capacity_met(&p_vector->Span, p_vector->Size + 1);
